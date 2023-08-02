@@ -1,0 +1,31 @@
+2023-07-19 09:26:20.824 [info] 
+
+
+
+
+2023-07-19 09:26:20.865 [info] Extension host agent started.
+2023-07-19 09:26:20.961 [info] [127.0.0.1][26dc11ad][ManagementConnection] New connection established.
+2023-07-19 09:26:21.017 [info] Installing extensions...
+2023-07-19 09:26:21.276 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] New connection established.
+2023-07-19 09:26:22.220 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] <141> Launched Extension Host Process.
+2023-07-19 09:26:22.265 [error] Error while installing extensions: unable to verify the first certificate
+2023-07-19 09:26:22.265 [error] Error: unable to verify the first certificate
+    at TLSSocket.onConnectSecure (node:_tls_wrap:1535:34)
+    at TLSSocket.emit (node:events:513:28)
+    at TLSSocket._finishInit (node:_tls_wrap:949:8)
+    at TLSWrap.ssl.onhandshakedone (node:_tls_wrap:730:12)
+2023-07-19 10:55:08.276 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] The client has reconnected.
+2023-07-19 10:55:08.388 [info] [127.0.0.1][26dc11ad][ManagementConnection] The client has reconnected.
+2023-07-19 14:34:27.529 [warning] No ptyHost heartbeat after 6 seconds
+2023-07-19 14:34:33.631 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] The client has reconnected.
+2023-07-19 14:34:33.758 [info] [127.0.0.1][26dc11ad][ManagementConnection] The client has reconnected.
+2023-07-19 16:07:47.604 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] The client has reconnected.
+2023-07-19 16:07:47.708 [info] [127.0.0.1][26dc11ad][ManagementConnection] The client has reconnected.
+2023-07-19 18:56:20.584 [warning] No ptyHost heartbeat after 6 seconds
+2023-07-19 18:56:26.581 [info] [127.0.0.1][26dc11ad][ManagementConnection] The client has reconnected.
+2023-07-19 18:56:26.682 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] The client has reconnected.
+2023-07-19 23:45:30.601 [warning] No ptyHost heartbeat after 6 seconds
+2023-07-19 23:45:47.580 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] The client has reconnected.
+2023-07-19 23:45:47.673 [info] [127.0.0.1][26dc11ad][ManagementConnection] The client has reconnected.
+2023-07-19 23:45:52.664 [info] [127.0.0.1][26dc11ad][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+2023-07-19 23:45:52.747 [info] [127.0.0.1][29bd258a][ExtensionHostConnection] <141> Extension Host Process exited with code: 0, signal: null.

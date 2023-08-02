@@ -1,0 +1,22 @@
+2023-07-22 15:23:02.001 [info] 
+
+
+
+
+2023-07-22 15:23:02.033 [info] Extension host agent started.
+2023-07-22 15:23:02.232 [info] [127.0.0.1][2dca024a][ManagementConnection] New connection established.
+2023-07-22 15:23:02.376 [info] [127.0.0.1][18b966d4][ExtensionHostConnection] New connection established.
+2023-07-22 15:23:02.522 [info] Installing extensions...
+2023-07-22 15:23:03.574 [info] [127.0.0.1][18b966d4][ExtensionHostConnection] <140> Launched Extension Host Process.
+2023-07-22 15:23:03.621 [error] Error while installing extensions: unable to verify the first certificate
+2023-07-22 15:23:03.621 [error] Error: unable to verify the first certificate
+    at TLSSocket.onConnectSecure (node:_tls_wrap:1535:34)
+    at TLSSocket.emit (node:events:513:28)
+    at TLSSocket._finishInit (node:_tls_wrap:949:8)
+    at TLSWrap.ssl.onhandshakedone (node:_tls_wrap:730:12)
+2023-07-22 18:04:44.540 [info] [127.0.0.1][18b966d4][ExtensionHostConnection] The client has reconnected.
+2023-07-22 18:04:44.648 [info] [127.0.0.1][2dca024a][ManagementConnection] The client has reconnected.
+2023-07-22 19:07:51.496 [info] [127.0.0.1][2dca024a][ManagementConnection] The client has reconnected.
+2023-07-22 19:07:51.584 [info] [127.0.0.1][18b966d4][ExtensionHostConnection] The client has reconnected.
+2023-07-22 21:26:06.397 [info] [127.0.0.1][2dca024a][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+2023-07-22 21:26:06.475 [info] [127.0.0.1][18b966d4][ExtensionHostConnection] <140> Extension Host Process exited with code: 0, signal: null.

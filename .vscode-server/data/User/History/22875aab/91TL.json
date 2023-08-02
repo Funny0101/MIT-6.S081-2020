@@ -1,0 +1,8 @@
+{
+    "[python]": {
+        "editor.formatOnType": true
+    },
+    "liveServer.settings.donotShowInfoMsg": true,
+    "git.openRepositoryInParentFolders": "always",
+    "window.zoomLevel": -2
+}

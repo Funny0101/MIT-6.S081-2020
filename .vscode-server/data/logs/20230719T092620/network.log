@@ -1,0 +1,2 @@
+2023-07-19 09:26:22.261 [error] node #1: https://az764295.vo.msecnd.net/extensions/marketplace.json - error GET unable to verify the first certificate
+2023-07-19 09:26:22.263 [error] node #2: https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery - error POST unable to verify the first certificate

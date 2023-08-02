@@ -1,0 +1,18 @@
+2023-07-21 09:26:18.419 [info] 
+
+
+
+
+2023-07-21 09:26:18.451 [info] Extension host agent started.
+2023-07-21 09:26:18.844 [info] [127.0.0.1][03c55187][ManagementConnection] New connection established.
+2023-07-21 09:26:18.846 [info] [127.0.0.1][e5824844][ExtensionHostConnection] New connection established.
+2023-07-21 09:26:19.287 [info] Installing extensions...
+2023-07-21 09:26:20.458 [info] [127.0.0.1][e5824844][ExtensionHostConnection] <141> Launched Extension Host Process.
+2023-07-21 09:26:20.511 [error] Error while installing extensions: unable to verify the first certificate
+2023-07-21 09:26:20.511 [error] Error: unable to verify the first certificate
+    at TLSSocket.onConnectSecure (node:_tls_wrap:1535:34)
+    at TLSSocket.emit (node:events:513:28)
+    at TLSSocket._finishInit (node:_tls_wrap:949:8)
+    at TLSWrap.ssl.onhandshakedone (node:_tls_wrap:730:12)
+2023-07-21 09:40:58.015 [info] [127.0.0.1][03c55187][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+2023-07-21 09:40:58.069 [info] [127.0.0.1][e5824844][ExtensionHostConnection] <141> Extension Host Process exited with code: 0, signal: null.
