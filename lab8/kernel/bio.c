@@ -24,41 +24,30 @@
 #include "buf.h"
 
 struct {
-  // struct spinlock lock;
   struct buf buf[NBUF];
 
   // Linked list of all buffers, through prev/next.
   // Sorted by how recently the buffer was used.
   // head.next is most recent, head.prev is least.
-  // NEW
   struct buf buckets[NBUCKET];
   struct spinlock lks[NBUCKET];
 } bcache;
+
 
 void
 binit(void)
 {
   struct buf *b;
 
-  // Changed
-  // 初始化每个桶的锁 
-  for(int i=0;i<NBUCKET;i++)
-  {
-    // char str[10];
-    // snprintf(str, 9, "bcache %d", i);
-    // initlock(&bcache.lks[i], str);
+  for(int i=0; i<NBUCKET; i++) 
     initlock(&bcache.lks[i], "bcache");
-  }
-  // initlock(&bcache.lock, "bcache");
 
   // Create linked list of buffers
-  // Changed
-  // 仍需保持哈希桶双链表的特性 prev和next均指向自己
-  for(int i=0;i<NBUCKET;i++){
+  for(int i=0; i<NBUCKET; i++) {
     bcache.buckets[i].prev = &bcache.buckets[i];
     bcache.buckets[i].next = &bcache.buckets[i];
   }
-  
+
   for(b = bcache.buf; b < bcache.buf+NBUF; b++){
     b->next = bcache.buckets[0].next;
     b->prev = &bcache.buckets[0];
@@ -68,17 +57,6 @@ binit(void)
   }
 }
 
-
-// NEW
-// 返回对应桶的哈希值
-static int
-myhash(int x)
-{
-  return x%NBUCKET;
-}
-
-// NEW
-// 抽象一个bufinit 用于覆盖ticks最小的buf
 static void
 bufinit(struct buf* b, uint dev, uint blockno)
 {
@@ -86,6 +64,12 @@ bufinit(struct buf* b, uint dev, uint blockno)
   b->blockno = blockno;
   b->valid = 0;
   b->refcnt = 1;
+}
+
+static int
+myhash(int x)
+{
+  return x%NBUCKET;
 }
 
 // Look through buffer cache for block on device dev.
@@ -96,11 +80,9 @@ bget(uint dev, uint blockno)
 {
   struct buf *b;
 
-  // Changed
-  int id = myhash(blockno); // 计算出哈希值 挂载到相应的桶
-
+  int id = myhash(blockno);
+  
   acquire(&bcache.lks[id]);
-
   // Is the block already cached?
   for(b = bcache.buckets[id].next; b != &bcache.buckets[id]; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
@@ -111,68 +93,77 @@ bget(uint dev, uint blockno)
     }
   }
 
+  /**
+   * 检查没有发现cached的 buf，那么就根据 ticks LRU 策略
+   * 选择第 id 号哈希桶中 ticks 最小的淘汰，ticks 最小意味着
+   * 该 buf 在众多未被使用到（ b->refcnt==0 ）的 buf 中是距今最远的
+   * */
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.
-  // 但是此处应采用ticks最小的值淘汰
-  struct buf *victim = 0; // 选择要淘汰的buf
-  uint minticks = ticks; // 记录最小的ticks
-
-  /*找出最小ticks对应的buf*/
+  struct buf *victm = 0;
+  uint minticks = ticks;
   for(b = bcache.buckets[id].next; b != &bcache.buckets[id]; b = b->next){
-    if(b->refcnt == 0 && b->lastuse <= minticks){
+    if(b->refcnt==0 && b->lastuse<=minticks) {
       minticks = b->lastuse;
-      victim = b;
+      victm = b;
     }
   }
 
-  if(victim){
-    /* 找到了相应的buf 直接将其初始化(覆盖) */
-    bufinit(victim, dev, blockno);
+  if(!victm) 
+    goto steal;
+
+  /** 
+   * 直接覆盖待淘汰的buf，无需再将其中的旧内容写回至disk中 
+   * 标记位valid置0，为了保证能够读取到最新的数据 
+   * */
+  bufinit(victm, dev, blockno);
+
+  release(&bcache.lks[id]);
+  acquiresleep(&victm->lock);
+  return victm;
+
+steal:
+  /** 到别的哈希桶挖 buf */
+  for(int i=0; i<NBUCKET; i++) {
+    if(i == id)
+      continue;
+
+    acquire(&bcache.lks[i]);
+    minticks = ticks;
+    for(b = bcache.buckets[i].next; b != &bcache.buckets[i]; b = b->next){
+      if(b->refcnt==0 && b->lastuse<=minticks) {
+        minticks = b->lastuse;
+        victm = b;
+      }
+    }
+
+    if(!victm) {
+      release(&bcache.lks[i]);
+      continue;
+    }
+
+    bufinit(victm, dev, blockno);
+    
+    /** 将 victm 从第 i 号哈希桶中取出来 */
+    victm->next->prev = victm->prev;
+    victm->prev->next = victm->next;
+    release(&bcache.lks[i]);
+
+    /** 将 victm 接入第 id 号中 */
+    victm->next = bcache.buckets[id].next;
+    bcache.buckets[id].next->prev = victm;
+    bcache.buckets[id].next = victm;
+    victm->prev = &bcache.buckets[id];
+
     release(&bcache.lks[id]);
-    acquiresleep(&victim->lock);
-    return victim;
-  }
-  else{
-    /* 到别的哈希桶去偷一个buf */
-    for(int i=0;i<NBUCKET;i++){
-      if(i == id) // 跳过自己
-        continue;
-      
-      // 重复之前的操作 找到最小的ticks对应的buf
-      acquire(&bcache.lks[i]);
-      minticks = ticks;
-      for(b = bcache.buckets[i].next; b != &bcache.buckets[i]; b = b->next){
-        if(b->refcnt==0 && b->lastuse<=minticks) {
-          minticks = b->lastuse;
-          victim = b;
-        }
-      }
-      if(victim){
-        bufinit(victim,dev,blockno);
-
-        /* 将victim从bucket中取出来 保持双链表的结构完整 */
-        victim->next->prev = victim->prev;
-        victim->prev->next = victim->next;
-        release(&bcache.lks[i]);
-
-        /* 将victim放到第id个bucket中 保持双链表的稳定性 */
-        victim->next = bcache.buckets[id].next;
-        bcache.buckets[id].next->prev = victim;
-        bcache.buckets[id].next = victim;
-        victim->prev = &bcache.buckets[id];
-
-        release(&bcache.lks[id]);
-        acquiresleep(&victim->lock); // 主动让出CPU
-        return victim;
-      }
-      else
-        release(&bcache.lks[i]);
-    }
+    acquiresleep(&victm->lock);
+    return victm;
   }
 
   release(&bcache.lks[id]);
-  panic("bget: no buffers");
+  panic("bget: no buf");
 }
+
 
 // Return a locked buf with the contents of the indicated block.
 struct buf*
@@ -204,36 +195,36 @@ brelse(struct buf *b)
 {
   if(!holdingsleep(&b->lock))
     panic("brelse");
-
   releasesleep(&b->lock);
 
-  // Changed
-  int id = myhash(b->blockno); // 计算出哈希值 挂载到相应的桶
-
+  int id = myhash(b->blockno);
   acquire(&bcache.lks[id]);
   b->refcnt--;
-  if (b->refcnt == 0)
+  if(b->refcnt == 0)
     b->lastuse = ticks;
-  
   release(&bcache.lks[id]);
 }
 
+
 void
-bpin(struct buf *b) {
-  // Changed
-  int id = myhash(b->blockno); // 计算出哈希值 挂载到相应的桶
+bpin(struct buf *b) 
+{
+  int id = myhash(b->blockno);
+
   acquire(&bcache.lks[id]);
   b->refcnt++;
   release(&bcache.lks[id]);
 }
 
 void
-bunpin(struct buf *b) {
-  // Changed
-  int id = myhash(b->blockno); // 计算出哈希值 挂载到相应的桶
+bunpin(struct buf *b) 
+{
+  int id = myhash(b->blockno);
+
   acquire(&bcache.lks[id]);
   b->refcnt--;
   release(&bcache.lks[id]);
 }
+
 
 

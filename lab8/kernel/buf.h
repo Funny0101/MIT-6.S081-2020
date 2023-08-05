@@ -9,8 +9,6 @@ struct buf {
   struct buf *next;
   uchar data[BSIZE];
 
-  // NEW
-  // 最近被使用的时间戳
-  uint lastuse;
+  uint lastuse;   /** 最近被使用的时间戳 */
 };
 

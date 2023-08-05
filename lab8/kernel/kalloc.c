@@ -18,26 +18,18 @@ struct run {
   struct run *next;
 };
 
-// Changed
-// 为每一个CPU生成一个freelist 对应一个自旋锁
 struct {
   struct spinlock lock;
   struct run *freelist;
-} kmem[NCPU];
+} kmems[NCPU];
+
 
 void
 kinit()
 {
-  // Changed
-  // 初始化所有锁
-  // initlock(&kmem.lock, "kmem");
-  for(int i=0;i<NCPU;i++){
-    char str[10];
-    snprintf(str, 9, "kmem %d", i);
-    initlock(&kmem[i].lock, str);
-  }
-
-  freerange(end, (void*)PHYSTOP);
+  for(int i=0; i<NCPU; i++)
+    initlock(&kmems[i].lock, "kmem");
+  freerange(end, (void*)PHYSTOP); 
 }
 
 void
@@ -66,18 +58,18 @@ kfree(void *pa)
 
   r = (struct run*)pa;
 
-  /** 获取 cpuid 时要关中断 然后再打开 */
+  /** 获取 cpuid 时要关中断，完事之后再把中断开下来 */
   push_off();
   int id = cpuid();
   pop_off();
 
-  // Changed
-  // 对每个CPU的链表进行free
-  acquire(&kmem[id].lock);
-  r->next = kmem[id].freelist;
-  kmem[id].freelist = r;
-  release(&kmem[id].lock);
+  /** 将空闲的 page 归还给第 id 个 CPU */
+  acquire(&kmems[id].lock);
+  r->next = kmems[id].freelist;
+  kmems[id].freelist = r;
+  release(&kmems[id].lock);
 }
+
 
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
@@ -86,38 +78,40 @@ void *
 kalloc(void)
 {
   struct run *r;
-  // NEW
-  // 按照提示获取cpuid 并在前后执行开关中断的操作
+
+  /** 获取 cpuid 时要关中断，完事之后再把中断开下来 */
   push_off();
   int id = cpuid();
-  pop_off(); 
+  pop_off();
 
-  /*尝试获取剩余空闲空间page*/
-  acquire(&kmem[id].lock);
-  r = kmem[id].freelist;
-  if(r)
-    kmem[id].freelist = r->next;
-  else{
-    for(int i=0;i<NCPU;i++){
-      if(i == id) // 偷page时跳过自身
+  /** 尝试获取剩余的空闲 page */
+  acquire(&kmems[id].lock);
+  r = kmems[id].freelist;
+  if(r) {
+    kmems[id].freelist = r->next;
+  } else {
+    for(int i=0; i<NCPU; i++) {
+      if(i == id)
         continue;
-      
-      /*尝试偷一个其它CPU的空闲page*/
-      acquire(&kmem[i].lock);
-      if(!kmem[i].freelist){
-        release(&kmem[i].lock);
+
+      /** 尝试偷一个其他 CPU 的空闲 page */
+      acquire(&kmems[i].lock);
+      if(!kmems[i].freelist) {
+        release(&kmems[i].lock);
         continue;
       }
-
-      r = kmem[i].freelist;
-      kmem[i].freelist = r->next;
-      release(&kmem[i].lock);
+      
+      r = kmems[i].freelist;
+      kmems[i].freelist = r->next;
+      release(&kmems[i].lock);
       break;
     }
   }
-  release(&kmem[id].lock);
-  /*第id个CPU没有空闲page 也没偷到*/ 
+  release(&kmems[id].lock);
+
+  /** 有一种可能：第id个CPU没有空闲 page ，也没偷到 */
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
+

@@ -12,6 +12,4 @@
 #define FSSIZE       10000  // size of file system in blocks
 #define MAXPATH      128   // maximum file path name
 
-// NEW
-#define NBUCKET      13     // 哈希表桶数
-
+#define NBUCKET      13     /** 哈希表桶数 */
